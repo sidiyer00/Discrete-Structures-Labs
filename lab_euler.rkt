@@ -1,8 +1,8 @@
 #lang eopl
 
 #|-------------------------------------------------------------------------------
- | Name:
- | Pledge:
+ | Name: Siddharth Iyer
+ | Pledge: I pledge my honor that I have abided by the Stevens Honor System.
  |-------------------------------------------------------------------------------|#
 
 
@@ -150,13 +150,25 @@
  |   (get-vertices polygons) -> (1 2 3 4 5 6 7)
  |   (get-vertices reflex)   -> (1 2 3)
  |   (get-vertices empty)    -> ()
+(append (list (car (car G)) (car (cdr (car G)))) (get-vertices (cdr G)))
  |#
 
-;; Type signature: (get-vertices graph) -> list-of-vertices
+;; Type signature: (get-vertices graph) -> list-of-vertices 
 ;; 3 PTS
 (define (get-vertices G)
-  "TODO: Implement")
+ (make-set (get-vertices-helper '() G))
+  )
 
+(define (get-vertices-helper lst G)
+  (if (null? G) lst
+      (get-vertices-helper (append lst (list (car (car G)) (car (cdr (car G))))) (cdr G))
+      )
+  )
+
+(define (make-set L)
+  (cond [(null? L) '()]
+        [(member (car L) (cdr L)) (make-set (cdr L))]
+        [else (cons (car L) (make-set (cdr L)))]))
 
 
 
@@ -184,7 +196,13 @@
 ;; Type signature: (degree graph vertex) -> natural
 ;; 4 PTS
 (define (degree G v)
-  "TODO: Implement")
+ (occurances v (get-vertices-helper '() G))
+  )
+
+(define (occurances a s)
+    (cond [(null? s) 0]
+          [(equal? a (car s)) (+ 1 (occurances a (cdr s)))]
+          [else  (occurances a (cdr s))]))
 
 
 
@@ -207,7 +225,17 @@
 ;; Type signature: (all-even? graph) -> boolean
 ;; 3 PTS
 (define (all-even? G)
-  "TODO: Implement")
+  (if (null? G) #t
+      (all-even-helper (map (lambda (x) (even? (degree G x))) (get-vertices G)))
+      ) 
+  )
+
+(define (all-even-helper L)
+  (cond [(null? L) #t]
+        [(equal? #t (car L)) (all-even-helper (cdr L))]
+        [else #f]
+        )
+  )
 
 
 
@@ -253,7 +281,11 @@
 ;; Type signature: (adjacent graph vertex) -> list-of-vertices
 ;; 4 PTS
 (define (adjacent G v)
-  "TODO: Implement")
+  (cond [(null? G) '()]
+        [(equal? v (car (car G))) (append (list (car (cdr (car G)))) (adjacent (cdr G) v))]
+        [(equal? v (car (cdr (car G)))) (append (list (car (car G))) (adjacent (cdr G) v))]
+        [else (adjacent (cdr G) v)]
+        ))
 
 
 
@@ -288,8 +320,35 @@
 ;; Type signature: (connected? graph) -> boolean
 ;; 4 PTS
 (define (connected? G)
-  "TODO: Implement")
+  (connected-helper G (map (lambda (x) (make-set (dfs G x))) (get-vertices G)))
+  )
 
+(define (connected-helper G L)
+  (cond [(null? L) #t]
+        [(set-equal? (car L) (get-vertices G)) (connected-helper G (cdr L))]
+        [else #f]
+        )
+  )
+
+(define (element? S e)
+  (cond [(null? S) #f]
+        [(equal? e (car S)) #t]
+        [(not (equal? e (car S))) (element? (cdr S) e)])
+  )
+
+(define (filter P L)
+  (cond [(null? L) '()]
+        [(P (car L)) (cons (car L) (filter P (cdr L)))]
+        [else (filter P (cdr L))])
+  )
+
+(define (subset? S1 S2)
+  (equal? S1 (filter (lambda (x) (if (element? S2 x) #t #f)) S1))
+  )
+
+(define (set-equal? S1 S2)
+  (and (subset? S1 S2) (subset? S2 S1))
+  )
 
 
 
@@ -318,4 +377,6 @@
 ;; Type signature: (eulerian? graph) -> boolean
 ;; 2 PTS
 (define (eulerian? G)
-  "TODO: Implement")
+  (and (all-even? G) (connected? G))
+  )
+
